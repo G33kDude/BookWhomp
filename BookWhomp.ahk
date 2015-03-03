@@ -81,7 +81,7 @@ class Board
 			{
 				y := A_Index
 				Random, Rand, 65, 90
-				MyTile := new Tile(x, y, TileWidth-1, TileHeight-1, Chr(Rand))
+				MyTile := new Board.Tile(x, y, TileWidth-1, TileHeight-1, Chr(Rand))
 				this.Grid[x, y] := MyTile
 				this.Tiles.Insert(MyTile)
 			}
@@ -96,13 +96,34 @@ class Board
 	Select(x, y)
 	{
 		Tile := this.Grid[x, y]
-		if this.SelectedTiles.HasKey(Tile)
-			return
-		Tile.Color := 0x00C000
-		for k in this.SelectedTiles ; If there are items in this.SelectedTiles
-			Tile.Color := 0x0000FF, break
+		if this.IsSelecting()
+		{
+			if !this.IsSelectable(x, y)
+				return ToolTip("Not adjacent")
+			if this.SelectedTiles.HasKey(Tile)
+				return ToolTip("Already selected")
+			Tile.Color := 0x0000FF
+		}
+		else
+			Tile.Color := 0x00C000
+		
 		this.SelectedTiles[Tile] := True
 		this.Draw()
+	}
+	
+	IsSelecting()
+	{
+		for Tile in this.SelectedTiles
+			return True
+		return False
+	}
+	
+	IsSelectable(x, y)
+	{
+		for Tile in this.SelectedTiles
+			if (Abs(Tile.x-x) < 2 && Abs(Tile.y-y) < 2)
+				return True
+		return False
 	}
 	
 	Deselect()
@@ -122,24 +143,34 @@ class Board
 			Tile.Draw(this.MyGdi, (tile.x-1)*this.TileWidth + 1, (tile.y-1)*this.TileHeight + 1)
 		this.MyGdi.BitBlt()
 	}
+	
+	class Tile
+	{
+		__New(x, y, w, h, l)
+		{
+			this.x := x, this.y := y
+			this.w := w, this.h := h
+			this.bg := 0x1055B2
+			this.fg := 0x166BCC
+			this.Color := 0x000000
+			this.Letter := l
+		}
+		
+		Draw(MyGdi, xPos, yPos)
+		{
+			MyGdi.FillRectangle(xPos, yPos, this.w, this.h, this.bg)
+			MyGdi.FillRectangle(xPos+2, yPos+2, this.w-4, this.h-4, this.fg)
+			MyGdi.DrawText(xPos, yPos, this.w, this.h, this.Letter, this.Color, "Arial", 20, "CC")
+		}
+	}
 }
 
-class Tile
+ToolTip(Text, Time=1000)
 {
-	__New(x, y, w, h, l)
-	{
-		this.x := x, this.y := y
-		this.w := w, this.h := h
-		this.bg := 0x1055B2
-		this.fg := 0x166BCC
-		this.Color := 0x000000
-		this.Letter := l
-	}
-	
-	Draw(MyGdi, xPos, yPos)
-	{
-		MyGdi.FillRectangle(xPos, yPos, this.w, this.h, this.bg)
-		MyGdi.FillRectangle(xPos+2, yPos+2, this.w-4, this.h-4, this.fg)
-		MyGdi.DrawText(xPos, yPos, this.w, this.h, this.Letter, this.Color, "Arial", 20, "CC")
-	}
+	ToolTip, %Text%
+	SetTimer, ClearTip, % -Abs(Time)
+	return
+	ClearTip:
+	ToolTip
+	return
 }
