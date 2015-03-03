@@ -3,6 +3,11 @@ SetBatchLines, -1
 
 #Include GDI.ahk
 
+Dict := []
+for each, Word in StrSplit(FileOpen("BWDict.txt", "r").Read(), "`n", "`r")
+	if (StrLen(Word) >= 4)
+		Dict[Word] := True
+
 Width := 7
 Height := 7
 TileWidth := 30
@@ -13,8 +18,8 @@ BoardHeight := Height*TileHeight + 1
 Gui, New, +ToolWindow +E0x40000
 Gui, Margin, 0, 0
 Gui, Add, Progress, w%BoardWidth% h%BoardHeight% hWndBoardHwnd
-Gui, Add, Edit, % "w" BoardWidth-50 " y+1"
-Gui, Add, Button, x+0 yp-1 w50, Submit
+Gui, Add, Edit, % "w" BoardWidth-50 " y+1 vWord"
+Gui, Add, Button, x+0 yp-1 w50 gSubmit Default, Submit
 Gui, Show
 
 MyGdi := new GDI(BoardHwnd)
@@ -29,6 +34,45 @@ return
 GuiClose:
 ExitApp
 return
+
+Submit:
+GuiControlGet, Word
+Anagram := MyBoard.GetSelectedWord()
+if !Dict.HasKey(Word)
+	ToolTip("Unkown word: " Word)
+else if !IsAnagram(Word, Anagram)
+	ToolTip("Invalid anagram")
+else
+{
+	for Tile in MyBoard.Deselect()
+		Tile.Letter := RandomLetter()
+	MyBoard.Draw()
+	GuiControl,, Word
+	ToolTip("W00t, +1920384 points!")
+}
+return
+
+IsAnagram(Params*)
+{
+	FirstParam := Sort(RegExReplace(Params.Remove(), ".", "$0."), "D.")
+	for each, Param in Params
+		if (Sort(RegExReplace(Param, ".", "$0."), "D.") != FirstParam)
+			return False
+	return True
+}
+
+RandomLetter() ; Psuedo random weighted letter generator
+{
+	static letters := "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ"
+	Random, Rand, 1, 98
+	return SubStr(letters, Rand, 1)
+}
+
+Sort(String, Params)
+{
+	Sort, String, %Params%
+	return String
+}
 
 WM_LBUTTONUP(wParam, lParam, Msg, hWnd)
 {
@@ -80,8 +124,8 @@ class Board
 			Loop, %Height%
 			{
 				y := A_Index
-				Random, Rand, 65, 90
-				MyTile := new Board.Tile(x, y, TileWidth-1, TileHeight-1, Chr(Rand))
+				Letter := RandomLetter()
+				MyTile := new Board.Tile(x, y, TileWidth-1, TileHeight-1, Letter)
 				this.Grid[x, y] := MyTile
 				this.Tiles.Insert(MyTile)
 			}
@@ -141,6 +185,13 @@ class Board
 		this.SelectedTiles := []
 		this.Draw()
 		return Tiles
+	}
+	
+	GetSelectedWord()
+	{
+		for Tile in this.SelectedTiles
+			Out .= Tile.Letter
+		return Out
 	}
 	
 	Draw()
