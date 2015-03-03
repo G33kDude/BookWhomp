@@ -102,10 +102,14 @@ class Board
 				return ToolTip("Not adjacent")
 			if this.SelectedTiles.HasKey(Tile)
 				return ToolTip("Already selected")
-			Tile.Color := 0x0000FF
+			Tile.bg := 0x161FCC
+			Tile.fg := 0x1012B2
 		}
 		else
-			Tile.Color := 0x00C000
+		{
+			Tile.fg := 0x10B244
+			Tile.bg := 0x16CC49
+		}
 		
 		this.SelectedTiles[Tile] := True
 		this.Draw()
@@ -129,7 +133,10 @@ class Board
 	Deselect()
 	{
 		for Tile in this.SelectedTiles
-			Tile.Color := 0x000000
+		{
+			Tile.fg := Board.Tile.fg
+			Tile.bg := Board.Tile.bg
+		}
 		Tiles := this.SelectedTiles
 		this.SelectedTiles := []
 		this.Draw()
@@ -146,20 +153,20 @@ class Board
 	
 	class Tile
 	{
+		static bg := 0x166BCC, fg := 0x1055B2, Color := 0x000000
+		
+		
 		__New(x, y, w, h, l)
 		{
 			this.x := x, this.y := y
 			this.w := w, this.h := h
-			this.bg := 0x1055B2
-			this.fg := 0x166BCC
-			this.Color := 0x000000
 			this.Letter := l
 		}
 		
 		Draw(MyGdi, xPos, yPos)
 		{
-			MyGdi.FillRectangle(xPos, yPos, this.w, this.h, this.bg)
-			MyGdi.FillRectangle(xPos+2, yPos+2, this.w-4, this.h-4, this.fg)
+			MyGdi.FillRectangle(xPos, yPos, this.w, this.h, this.fg)
+			MyGdi.FillRectangle(xPos+2, yPos+2, this.w-4, this.h-4, this.bg)
 			MyGdi.DrawText(xPos, yPos, this.w, this.h, this.Letter, this.Color, "Arial", 20, "CC")
 		}
 	}
